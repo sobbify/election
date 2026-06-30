@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+    <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="btn-primary">
+        + Create New Election
+    </button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for election in elections %}
+    <div class="card border-t-4 border-blue-600">
+        <h2 class="text-xl font-bold mb-2">{{ election.title }}</h2>
+        <p class="text-gray-600 mb-4 line-clamp-2">{{ election.description }}</p>
+        <div class="flex justify-between items-center">
+            <span class="px-2 py-1 text-xs rounded {{ 'bg-green-100 text-green-800' if election.is_active else 'bg-red-100 text-red-800' }}">
+                {{ 'Active' if election.is_active else 'Draft' }}
+            </span>
+            <a href="/admin/election/{{ election.id }}" class="text-blue-600 hover:underline font-semibold">Manage &rarr;</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Create Election Modal -->
+<div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4">New Election</h2>
+        <form action="/admin/election/create" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Title</label>
+                <input type="text" name="title" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                <textarea name="description" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

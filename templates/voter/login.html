@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-12">
+    <div class="card">
+        <h1 class="text-3xl font-bold text-center mb-6">{{ election.title }}</h1>
+        <p class="text-center text-gray-600 mb-8">Please enter your credentials to vote.</p>
+        
+        <form action="/vote/{{ election.id }}/login" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Voter ID</label>
+                <input type="text" name="voter_id" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Voter Key</label>
+                <input type="password" name="voter_key" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <button type="submit" class="w-full btn-primary py-3 text-lg">Login to Vote</button>
+        </form>
+        
+        {% if request.query_params.get('error') %}
+        <p class="mt-4 text-red-600 text-center font-bold">{{ request.query_params.get('error') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
