@@ -27,6 +27,11 @@
             {% for question in election.questions %}
             <div class="mb-6 p-4 border rounded bg-gray-50">
                 <h3 class="text-lg font-bold mb-2">{{ question.text }}</h3>
+                {% if question.image_data %}
+                <div class="mb-3">
+                    <img src="data:{{ question.image_type }};base64,{{ question.image_data | string }}" alt="Question image" class="max-h-32 rounded">
+                </div>
+                {% endif %}
                 <ul class="list-disc ml-6 mb-4">
                     {% for option in question.options %}
                     <li>
@@ -36,21 +41,31 @@
                     </li>
                     {% endfor %}
                 </ul>
-                <form action="/admin/question/{{ question.id }}/option/add" method="POST" class="flex flex-col gap-2">
+                <form action="/admin/question/{{ question.id }}/option/add" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2">
                     <div class="flex gap-2">
                         <input type="text" name="name" placeholder="Candidate Name" required class="border rounded p-1 flex-1">
                         <input type="text" name="bio" placeholder="Bio (Optional)" class="border rounded p-1 flex-1">
                         <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">+ Add Candidate</button>
                     </div>
+                    <div class="flex gap-2">
+                        <input type="file" name="image" accept="image/*" class="border rounded p-1 flex-1 text-sm">
+                        <span class="text-xs text-gray-500 self-center">Optional image</span>
+                    </div>
                 </form>
             </div>
             {% endfor %}
             
-            <form action="/admin/election/{{ election.id }}/question/add" method="POST" class="mt-4 border-t pt-4">
+            <form action="/admin/election/{{ election.id }}/question/add" method="POST" enctype="multipart/form-data" class="mt-4 border-t pt-4">
                 <h3 class="font-bold mb-2">Add New Position/Question</h3>
-                <div class="flex gap-2">
-                    <input type="text" name="text" placeholder="e.g., Who should be President?" required class="border rounded p-2 flex-1">
-                    <button type="submit" class="btn-primary">Add Question</button>
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-2">
+                        <input type="text" name="text" placeholder="e.g., Who should be President?" required class="border rounded p-2 flex-1">
+                        <button type="submit" class="btn-primary">Add Question</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="file" name="image" accept="image/*" class="border rounded p-2 flex-1 text-sm">
+                        <span class="text-xs text-gray-500 self-center">Optional image</span>
+                    </div>
                 </div>
             </form>
         </div>
@@ -59,43 +74,16 @@
     <!-- Voters -->
     <div>
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4">Eligible Voters</h2>
-            <form action="/admin/election/{{ election.id }}/voter/add" method="POST" class="mb-4">
-                <div class="flex gap-2">
-                    <input type="text" name="voter_id" placeholder="Voter Name/ID" required class="border rounded p-2 flex-1">
-                    <button type="submit" class="btn-primary">Add</button>
+            <h2 class="text-2xl font-bold mb-4">Voting Link</h2>
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                <strong>Share this link with voters:</strong><br>
+                <div class="flex items-center gap-2 mt-2">
+                    <code id="share-link" class="break-all bg-white p-2 border rounded flex-1 text-xs">/vote/{{ election.id }}</code>
+                    <button onclick="copyLink()" class="bg-blue-200 hover:bg-blue-300 px-2 py-1 rounded text-xs font-bold">Copy</button>
                 </div>
-            </form>
-            <div class="overflow-y-auto max-h-96">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="text-left py-2">ID</th>
-                            <th class="text-left py-2">Key</th>
-                            <th class="text-left py-2">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for voter in election.voters %}
-                        <tr class="border-b">
-                            <td class="py-2">{{ voter.voter_id }}</td>
-                            <td class="py-2 font-mono text-xs">{{ voter.voter_key }}</td>
-                            <td class="py-2">
-                                <span class="{{ 'text-green-600' if voter.has_voted else 'text-gray-400' }}">
-                                    {{ 'Voted' if voter.has_voted else 'Pending' }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
             <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                <strong>Share Link:</strong><br>
-                <div class="flex items-center gap-2 mt-1">
-                    <code id="share-link" class="break-all bg-white p-1 border rounded flex-1">/vote/{{ election.id }}</code>
-                    <button onclick="copyLink()" class="bg-yellow-200 hover:bg-yellow-300 px-2 py-1 rounded">Copy</button>
-                </div>
+                <strong>Note:</strong> No authentication required. Voters can vote directly by accessing the link above.
             </div>
         </div>
     </div>

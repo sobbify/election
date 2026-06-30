@@ -2,10 +2,21 @@
 
 {% block content %}
 <div class="text-center max-w-2xl mx-auto py-12">
-    <h1 class="text-5xl font-extrabold text-gray-900 mb-6">Secure Online Elections</h1>
-    <p class="text-xl text-gray-600 mb-8">Create, manage, and run secure elections for your organization with ease.</p>
+    <h1 class="text-5xl font-extrabold text-gray-900 mb-6">🗳️ Simple Online Voting</h1>
+    <p class="text-xl text-gray-600 mb-8">Create elections with images, share a link, and let anyone vote instantly. No authentication needed.</p>
     <div class="flex justify-center space-x-4">
-        <a href="/admin" class="btn-primary text-lg px-8 py-3">Get Started (Admin)</a>
+        <a href="/admin" class="btn-primary text-lg px-8 py-3">Create Election (Admin)</a>
+    </div>
+    <div class="mt-12 p-6 bg-blue-50 rounded-lg border border-blue-200">
+        <h2 class="text-lg font-bold mb-2">How it works:</h2>
+        <ol class="text-left space-y-2 text-gray-700">
+            <li>1. Create an election in the admin panel</li>
+            <li>2. Add questions with optional images</li>
+            <li>3. Add candidates/options with optional images</li>
+            <li>4. Launch the election</li>
+            <li>5. Share the voting link with anyone</li>
+            <li>6. Voters can vote instantly without login</li>
+        </ol>
     </div>
 </div>
 {% endblock %}

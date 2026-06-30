@@ -16,6 +16,9 @@
         {% for question in election.questions %}
         <div class="card">
             <h3 class="text-xl font-bold mb-4 text-center">{{ question.text }}</h3>
+            {% if question.image_data %}
+            <img src="data:{{ question.image_type }};base64,{{ question.image_data | string }}" alt="Question image" class="max-h-40 rounded mb-4 w-full object-cover">
+            {% endif %}
             {% if question.options %}
             <canvas id="chart-{{ question.id }}" width="400" height="400"></canvas>
             <script>
@@ -42,10 +45,19 @@
                 })();
             </script>
             <div class="mt-6">
-                <table class="w-full">
+                <table class="w-full text-sm">
                     {% for option in question.options %}
                     <tr class="border-t">
-                        <td class="py-2">{{ option.name }}</td>
+                        <td class="py-2">
+                            {% if option.image_data %}
+                            <div class="flex items-center gap-2">
+                                <img src="data:{{ option.image_type }};base64,{{ option.image_data | string }}" alt="{{ option.name }}" class="h-8 w-8 rounded object-cover">
+                                <span>{{ option.name }}</span>
+                            </div>
+                            {% else %}
+                            {{ option.name }}
+                            {% endif %}
+                        </td>
                         <td class="py-2 text-right font-bold">{{ option.votes }} votes</td>
                     </tr>
                     {% endfor %}
@@ -59,8 +71,9 @@
     </div>
     {% endif %}
 
-    <div class="text-center mt-12">
+    <div class="text-center mt-12 space-x-4">
         <a href="/" class="btn-secondary">Return Home</a>
+        <a href="/vote/{{ election.id }}" class="btn-primary">Vote Again</a>
     </div>
 </div>
 {% endblock %}
