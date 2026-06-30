@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-import datetime
+from datetime import datetime, timezone
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./election.db"
 
@@ -18,8 +18,7 @@ class Election(Base):
     title = Column(String, index=True)
     description = Column(String)
     is_active = Column(Boolean, default=False)
-    is_published = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     questions = relationship("Question", back_populates="election", cascade="all, delete-orphan")
     voters = relationship("Voter", back_populates="election", cascade="all, delete-orphan")

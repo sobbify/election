@@ -5,12 +5,17 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import database
 import uuid
+import os
 
 app = FastAPI()
 
+# Ensure static and templates directories exist
+os.makedirs("/home/ubuntu/election_app/static", exist_ok=True)
+os.makedirs("/home/ubuntu/election_app/templates", exist_ok=True)
+
 # Mount static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="/home/ubuntu/election_app/static"), name="static")
+templates = Jinja2Templates(directory="/home/ubuntu/election_app/templates")
 
 # Initialize DB
 database.init_db()
@@ -44,6 +49,8 @@ async def create_election(title: str = Form(...), description: str = Form(...), 
 @app.get("/admin/election/{election_id}", response_class=HTMLResponse)
 async def election_detail(election_id: int, request: Request, db: Session = Depends(get_db)):
     election = db.query(database.Election).filter(database.Election.id == election_id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
     return templates.TemplateResponse("admin/election_detail.html", {"request": request, "election": election})
 
 @app.post("/admin/election/{election_id}/question/add")
@@ -56,6 +63,8 @@ async def add_question(election_id: int, text: str = Form(...), db: Session = De
 @app.post("/admin/question/{question_id}/option/add")
 async def add_option(question_id: int, name: str = Form(...), bio: str = Form(None), db: Session = Depends(get_db)):
     question = db.query(database.Question).filter(database.Question.id == question_id).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
     option = database.Option(name=name, bio=bio, question_id=question_id)
     db.add(option)
     db.commit()
@@ -72,6 +81,8 @@ async def add_voter(election_id: int, voter_id: str = Form(...), db: Session = D
 @app.post("/admin/election/{election_id}/toggle")
 async def toggle_election(election_id: int, db: Session = Depends(get_db)):
     election = db.query(database.Election).filter(database.Election.id == election_id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
     election.is_active = not election.is_active
     db.commit()
     return RedirectResponse(url=f"/admin/election/{election_id}", status_code=status.HTTP_303_SEE_OTHER)
@@ -81,6 +92,8 @@ async def toggle_election(election_id: int, db: Session = Depends(get_db)):
 @app.get("/vote/{election_id}", response_class=HTMLResponse)
 async def voter_login_page(election_id: int, request: Request, db: Session = Depends(get_db)):
     election = db.query(database.Election).filter(database.Election.id == election_id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
     return templates.TemplateResponse("voter/login.html", {"request": request, "election": election})
 
 @app.post("/vote/{election_id}/login")
@@ -101,7 +114,16 @@ async def voter_login(election_id: int, voter_id: str = Form(...), voter_key: st
 async def voter_ballot(election_id: int, voter_id: str, voter_key: str, request: Request, db: Session = Depends(get_db)):
     election = db.query(database.Election).filter(database.Election.id == election_id).first()
     if not election or not election.is_active:
-        return "Election is not active."
+        return HTMLResponse(content="Election is not active.", status_code=403)
+    
+    voter = db.query(database.Voter).filter(
+        database.Voter.election_id == election_id,
+        database.Voter.voter_id == voter_id,
+        database.Voter.voter_key == voter_key
+    ).first()
+    if not voter or voter.has_voted:
+        return HTMLResponse(content="Unauthorized or already voted.", status_code=403)
+
     return templates.TemplateResponse("voter/ballot.html", {"request": request, "election": election, "voter_id": voter_id, "voter_key": voter_key})
 
 @app.post("/vote/{election_id}/submit")
@@ -117,7 +139,7 @@ async def submit_vote(election_id: int, request: Request, db: Session = Depends(
     ).first()
     
     if not voter or voter.has_voted:
-        return "Unauthorized or already voted."
+        return HTMLResponse(content="Unauthorized or already voted.", status_code=403)
     
     for key, value in form_data.items():
         if key.startswith("question_"):
@@ -133,4 +155,6 @@ async def submit_vote(election_id: int, request: Request, db: Session = Depends(
 @app.get("/vote/{election_id}/results", response_class=HTMLResponse)
 async def view_results(election_id: int, request: Request, db: Session = Depends(get_db)):
     election = db.query(database.Election).filter(database.Election.id == election_id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
     return templates.TemplateResponse("voter/results.html", {"request": request, "election": election})
