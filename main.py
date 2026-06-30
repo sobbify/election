@@ -9,13 +9,16 @@ import os
 
 app = FastAPI()
 
+# Resolve paths relative to this file's location so they work in any environment
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Ensure static and templates directories exist
-os.makedirs("/home/ubuntu/election_app/static", exist_ok=True)
-os.makedirs("/home/ubuntu/election_app/templates", exist_ok=True)
+os.makedirs(os.path.join(BASE_DIR, "static"), exist_ok=True)
+os.makedirs(os.path.join(BASE_DIR, "templates"), exist_ok=True)
 
 # Mount static files and templates
-app.mount("/static", StaticFiles(directory="/home/ubuntu/election_app/static"), name="static")
-templates = Jinja2Templates(directory="/home/ubuntu/election_app/templates")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Initialize DB
 database.init_db()
