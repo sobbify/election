@@ -4,26 +4,33 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import database
+import utils
 import uuid
 import os
 from pathlib import Path
-import base64
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 app = FastAPI()
 
 # Get the directory where main.py is located
 BASE_DIR = Path(__file__).parent
 
-# Ensure static and templates directories exist
+# Ensure directories exist
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
+UPLOADS_DIR = STATIC_DIR / "uploads"
 
 STATIC_DIR.mkdir(exist_ok=True)
 TEMPLATES_DIR.mkdir(exist_ok=True)
+UPLOADS_DIR.mkdir(exist_ok=True)
 
-# Mount static files and templates using relative paths
+# Mount static files and templates
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# Thread pool for concurrent operations
+executor = ThreadPoolExecutor(max_workers=4)
 
 # Initialize DB
 database.init_db()
@@ -68,17 +75,16 @@ async def add_question(
     image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    image_data = None
-    image_type = None
+    image_path = None
     if image and image.filename:
-        image_data = await image.read()
-        image_type = image.content_type
+        file_data = await image.read()
+        filename = f"q_{election_id}_{uuid.uuid4().hex[:8]}.jpg"
+        image_path = utils.save_image(file_data, filename)
     
     question = database.Question(
         text=text,
         election_id=election_id,
-        image_data=image_data,
-        image_type=image_type
+        image_path=image_path
     )
     db.add(question)
     db.commit()
@@ -96,18 +102,17 @@ async def add_option(
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
     
-    image_data = None
-    image_type = None
+    image_path = None
     if image and image.filename:
-        image_data = await image.read()
-        image_type = image.content_type
+        file_data = await image.read()
+        filename = f"o_{question_id}_{uuid.uuid4().hex[:8]}.jpg"
+        image_path = utils.save_image(file_data, filename)
     
     option = database.Option(
         name=name,
         bio=bio,
         question_id=question_id,
-        image_data=image_data,
-        image_type=image_type
+        image_path=image_path
     )
     db.add(option)
     db.commit()
@@ -122,7 +127,23 @@ async def toggle_election(election_id: int, db: Session = Depends(get_db)):
     db.commit()
     return RedirectResponse(url=f"/admin/election/{election_id}", status_code=status.HTTP_303_SEE_OTHER)
 
-# --- Voter Routes (No Authentication) ---
+# --- Vote Management ---
+
+@app.post("/admin/election/{election_id}/votes/clear")
+async def clear_all_votes(election_id: int, db: Session = Depends(get_db)):
+    election = db.query(database.Election).filter(database.Election.id == election_id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    
+    # Reset all votes for this election
+    for question in election.questions:
+        for option in question.options:
+            option.votes = 0
+    
+    db.commit()
+    return RedirectResponse(url=f"/admin/election/{election_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+# --- Voter Routes (Open Voting) ---
 
 @app.get("/vote/{election_id}", response_class=HTMLResponse)
 async def voter_ballot_page(election_id: int, request: Request, db: Session = Depends(get_db)):
@@ -141,18 +162,23 @@ async def submit_vote(election_id: int, request: Request, db: Session = Depends(
     if not election or not election.is_active:
         return HTMLResponse(content="Election is not active.", status_code=403)
     
-    # Process votes
-    for key, value in form_data.items():
-        if key.startswith("question_"):
-            try:
-                option_id = int(value)
-                option = db.query(database.Option).filter(database.Option.id == option_id).first()
-                if option:
-                    option.votes += 1
-            except (ValueError, TypeError):
-                pass
+    # Process votes concurrently
+    def process_votes():
+        for key, value in form_data.items():
+            if key.startswith("question_"):
+                try:
+                    option_id = int(value)
+                    option = db.query(database.Option).filter(database.Option.id == option_id).first()
+                    if option:
+                        option.votes += 1
+                except (ValueError, TypeError):
+                    pass
+        db.commit()
     
-    db.commit()
+    # Run in thread pool to avoid blocking
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, process_votes)
+    
     return RedirectResponse(url=f"/vote/{election_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/vote/{election_id}/results", response_class=HTMLResponse)
@@ -161,18 +187,3 @@ async def view_results(election_id: int, request: Request, db: Session = Depends
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
     return templates.TemplateResponse("voter/results.html", {"request": request, "election": election})
-
-# Image serving endpoints
-@app.get("/image/question/{question_id}")
-async def get_question_image(question_id: int, db: Session = Depends(get_db)):
-    question = db.query(database.Question).filter(database.Question.id == question_id).first()
-    if not question or not question.image_data:
-        raise HTTPException(status_code=404, detail="Image not found")
-    return {"image": base64.b64encode(question.image_data).decode(), "type": question.image_type}
-
-@app.get("/image/option/{option_id}")
-async def get_option_image(option_id: int, db: Session = Depends(get_db)):
-    option = db.query(database.Option).filter(database.Option.id == option_id).first()
-    if not option or not option.image_data:
-        raise HTTPException(status_code=404, detail="Image not found")
-    return {"image": base64.b64encode(option.image_data).decode(), "type": option.image_type}

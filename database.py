@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, DateTime, LargeBinary
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, timezone
@@ -26,8 +26,7 @@ class Question(Base):
     __tablename__ = "questions"
     id = Column(Integer, primary_key=True, index=True)
     text = Column(String)
-    image_data = Column(LargeBinary, nullable=True)
-    image_type = Column(String, nullable=True)
+    image_path = Column(String, nullable=True)
     election_id = Column(Integer, ForeignKey("elections.id"))
     
     election = relationship("Election", back_populates="questions")
@@ -38,8 +37,7 @@ class Option(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     bio = Column(String, nullable=True)
-    image_data = Column(LargeBinary, nullable=True)
-    image_type = Column(String, nullable=True)
+    image_path = Column(String, nullable=True)
     votes = Column(Integer, default=0)
     question_id = Column(Integer, ForeignKey("questions.id"))
     

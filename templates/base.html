@@ -3,29 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Election Runner Clone{% endblock %}</title>
+    <title>{% block title %}VoteHub - Open Voting{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .btn-primary { @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded; }
-        .btn-secondary { @apply bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded; }
-        .card { @apply bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4; }
+        * {
+            scroll-behavior: smooth;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-primary {
+            @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-all duration-200;
+        }
+        .btn-danger {
+            @apply bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200;
+        }
+        .card {
+            @apply glass-effect rounded-2xl p-6 shadow-xl;
+        }
+        .card-hover {
+            @apply card transition-all duration-300 hover:shadow-2xl hover:scale-105;
+        }
+        .gradient-text {
+            @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <nav class="bg-blue-800 p-4 text-white shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold tracking-tight">🗳️ ElectionRunner</a>
-            <div class="space-x-4">
-                <a href="/admin" class="hover:underline">Admin Dashboard</a>
+<body>
+    <nav class="glass-effect shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold gradient-text">🗳️ VoteHub</a>
+            <div class="space-x-6">
+                <a href="/admin" class="text-gray-700 hover:text-blue-600 font-semibold transition-colors">Admin</a>
             </div>
         </div>
     </nav>
     <main class="container mx-auto mt-8 p-4">
         {% block content %}{% endblock %}
     </main>
-    <footer class="text-center p-8 text-gray-500 text-sm">
-        Built with FastAPI & Vanilla JS
+    <footer class="text-center p-8 text-white text-sm mt-12">
+        <p>🗳️ VoteHub - Simple, Fast, Open Voting</p>
     </footer>
 </body>
 </html>
