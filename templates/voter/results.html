@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-5xl mx-auto">
     <div class="text-center mb-12">
@@ -22,39 +26,7 @@
             
             {% if question.options %}
             <div class="mb-6">
-                <canvas id="chart-{{ question.id }}" width="400" height="400"></canvas>
-                <script>
-                    (function() {
-                        const ctx = document.getElementById('chart-{{ question.id }}');
-                        new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: [{% for option in question.options %}"{{ option.name }}",{% endfor %}],
-                                datasets: [{
-                                    data: [{% for option in question.options %}{{ option.votes }},{% endfor %}],
-                                    backgroundColor: [
-                                        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#f43f5e'
-                                    ],
-                                    borderColor: '#fff',
-                                    borderWidth: 2
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: true,
-                                plugins: {
-                                    legend: { 
-                                        position: 'bottom',
-                                        labels: {
-                                            font: { size: 12 },
-                                            padding: 15
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    })();
-                </script>
+                <canvas id="chart-{{ question.id }}" width="400" height="400" data-labels='[{% for option in question.options %}"{{ option.name }}"{{ "," if not loop.last else "" }}{% endfor %}]' data-votes='[{% for option in question.options %}{{ option.votes }}{{ "," if not loop.last else "" }}{% endfor %}]'></canvas>
             </div>
 
             <div class="space-y-2">
@@ -92,4 +64,42 @@
         <a href="/vote/{{ election.id }}" class="btn-primary px-8 py-3 inline-block">🗳️ Vote Again</a>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvases = document.querySelectorAll('canvas[data-labels]');
+        const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#f43f5e'];
+        
+        canvases.forEach((canvas, index) => {
+            const labels = JSON.parse(canvas.dataset.labels);
+            const votes = JSON.parse(canvas.dataset.votes);
+            
+            new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: votes,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 12 },
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -8,8 +8,6 @@ import utils
 import uuid
 import os
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
 
 app = FastAPI()
 
@@ -28,9 +26,6 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-
-# Thread pool for concurrent operations
-executor = ThreadPoolExecutor(max_workers=4)
 
 # Initialize DB
 database.init_db()
@@ -162,23 +157,18 @@ async def submit_vote(election_id: int, request: Request, db: Session = Depends(
     if not election or not election.is_active:
         return HTMLResponse(content="Election is not active.", status_code=403)
     
-    # Process votes concurrently
-    def process_votes():
-        for key, value in form_data.items():
-            if key.startswith("question_"):
-                try:
-                    option_id = int(value)
-                    option = db.query(database.Option).filter(database.Option.id == option_id).first()
-                    if option:
-                        option.votes += 1
-                except (ValueError, TypeError):
-                    pass
-        db.commit()
+    # Process votes directly without thread pool overhead
+    for key, value in form_data.items():
+        if key.startswith("question_"):
+            try:
+                option_id = int(value)
+                option = db.query(database.Option).filter(database.Option.id == option_id).first()
+                if option:
+                    option.votes += 1
+            except (ValueError, TypeError):
+                pass
     
-    # Run in thread pool to avoid blocking
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(executor, process_votes)
-    
+    db.commit()
     return RedirectResponse(url=f"/vote/{election_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/vote/{election_id}/results", response_class=HTMLResponse)

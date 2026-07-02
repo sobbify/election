@@ -43,29 +43,15 @@
                     <div class="border-t border-gray-200 pt-4 mt-4">
                         <div class="grid grid-cols-3 gap-2 mb-4 text-center">
                             <div>
-                                <div class="text-2xl font-bold text-blue-600">{{ election.questions|length }}</div>
+                                <div class="text-2xl font-bold text-blue-600">{{ election.question_count }}</div>
                                 <div class="text-xs text-gray-600">Questions</div>
                             </div>
                             <div>
-                                <div class="text-2xl font-bold text-purple-600">
-                                    {% set total_candidates = 0 %}
-                                    {% for q in election.questions %}
-                                        {% set total_candidates = total_candidates + q.options|length %}
-                                    {% endfor %}
-                                    {{ total_candidates }}
-                                </div>
+                                <div class="text-2xl font-bold text-purple-600">{{ election.candidate_count }}</div>
                                 <div class="text-xs text-gray-600">Candidates</div>
                             </div>
                             <div>
-                                <div class="text-2xl font-bold text-green-600">
-                                    {% set total_votes = 0 %}
-                                    {% for q in election.questions %}
-                                        {% for o in q.options %}
-                                            {% set total_votes = total_votes + o.votes %}
-                                        {% endfor %}
-                                    {% endfor %}
-                                    {{ total_votes }}
-                                </div>
+                                <div class="text-2xl font-bold text-green-600">{{ election.total_votes }}</div>
                                 <div class="text-xs text-gray-600">Total Votes</div>
                             </div>
                         </div>

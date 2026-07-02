@@ -15,7 +15,7 @@ def generate_random_token(length: int = 5) -> str:
     return ''.join(random.choice(chars) for _ in range(length))
 
 def save_image(file_data: bytes, filename: str) -> str:
-    """Save image file and return the relative path."""
+    """Save image file with optimization and return the relative path."""
     try:
         # Open image with PIL to validate and optimize
         img = Image.open(BytesIO(file_data))
@@ -29,7 +29,7 @@ def save_image(file_data: bytes, filename: str) -> str:
         # Resize if too large (max 800x600)
         img.thumbnail((800, 600), Image.Resampling.LANCZOS)
         
-        # Save with compression
+        # Save with compression (JPEG for better compatibility)
         filepath = IMAGES_DIR / filename
         img.save(filepath, 'JPEG', quality=75, optimize=True)
         
