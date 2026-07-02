@@ -17,7 +17,7 @@
         <div class="card mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">{{ question.text }}</h2>
             {% if question.image_path %}
-            <img src="{{ question.image_path }}" alt="Question image" class="max-h-64 rounded-xl mb-6 w-full object-cover shadow-lg" loading="lazy">
+            <img src="{{ question.image_path }}" alt="Question image" class="rounded-xl mb-6 shadow-lg max-w-[800px] max-h-[800px] w-auto h-auto" loading="lazy">
             {% endif %}
             
             <div class="space-y-3">
